@@ -24,12 +24,18 @@ interface SchedulerState {
 }
 
 interface Window {
+  puter?: {
+    ai?: {
+      txt2speech: (text: string, language?: string) => Promise<HTMLAudioElement>;
+    };
+  };
   contentFarm: {
     runKazakhstanBot: () => Promise<BotRunResult>;
     getScheduler: () => Promise<SchedulerState>;
     setSchedulerEnabled: (enabled: boolean) => Promise<SchedulerState>;
     selectPhotos: () => Promise<string[]>;
-    renderManual: (script: string, photos: string[]) => Promise<RenderResult>;
+    renderManual: (script: string, photos: string[], audioPath?: string) => Promise<RenderResult>;
+    saveTtsAudio: (base64: string, extension: string) => Promise<string>;
     showItem: (filePath: string) => Promise<boolean>;
   };
 }

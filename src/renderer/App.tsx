@@ -1,18 +1,22 @@
 import { useEffect, useMemo, useState } from "react";
 import { createRoot } from "react-dom/client";
-import { Bot, CalendarClock, FileVideo, FolderOpen, ImagePlus, Play, Power, Sparkles } from "lucide-react";
+import { Bot, CalendarClock, FileAudio, FileVideo, FolderOpen, ImagePlus, Play, Power, Sparkles } from "lucide-react";
 import "./styles.css";
 
 type Status = "idle" | "running" | "done" | "error";
+type TtsStatus = Status | "loading";
 
 function App() {
   const [scheduler, setScheduler] = useState<SchedulerState>({ enabled: false });
   const [botStatus, setBotStatus] = useState<Status>("idle");
   const [manualStatus, setManualStatus] = useState<Status>("idle");
+  const [ttsStatus, setTtsStatus] = useState<TtsStatus>("idle");
   const [message, setMessage] = useState("");
   const [lastBotRun, setLastBotRun] = useState<BotRunResult | null>(null);
   const [lastManualRun, setLastManualRun] = useState<RenderResult | null>(null);
   const [photos, setPhotos] = useState<string[]>([]);
+  const [ttsLanguage, setTtsLanguage] = useState("ru-RU");
+  const [ttsAudioPath, setTtsAudioPath] = useState<string | undefined>();
   const [script, setScript] = useState(
     "Казахстан сегодня обсуждает одну тему: цены, городские проблемы и реакцию людей в Threads. Объясни коротко, почему это важно, что изменилось и чем это может закончиться."
   );
@@ -52,12 +56,34 @@ function App() {
     setManualStatus("running");
     setMessage("Rendering manual video draft...");
     try {
-      const result = await window.contentFarm.renderManual(script, photos);
+      const result = await window.contentFarm.renderManual(script, photos, ttsAudioPath);
       setLastManualRun(result);
       setManualStatus("done");
       setMessage(`Created ${result.videoPath}`);
     } catch (error) {
       setManualStatus("error");
+      setMessage(error instanceof Error ? error.message : String(error));
+    }
+  }
+
+  async function generateTts() {
+    setTtsStatus("loading");
+    setMessage("Generating Puter voice...");
+    try {
+      await ensurePuter();
+      if (!window.puter?.ai?.txt2speech) throw new Error("Puter TTS is not available.");
+      setTtsStatus("running");
+      const audio = await window.puter.ai.txt2speech(script, ttsLanguage);
+      await audio.play().catch(() => undefined);
+      const response = await fetch(audio.src);
+      if (!response.ok) throw new Error(`Could not fetch generated audio: ${response.status}`);
+      const blob = await response.blob();
+      const audioPath = await window.contentFarm.saveTtsAudio(await blobToBase64(blob), extensionFromMime(blob.type));
+      setTtsAudioPath(audioPath);
+      setTtsStatus("done");
+      setMessage(`Saved voice audio ${audioPath}`);
+    } catch (error) {
+      setTtsStatus("error");
       setMessage(error instanceof Error ? error.message : String(error));
     }
   }
@@ -157,7 +183,24 @@ function App() {
             </div>
             <textarea value={script} onChange={(event) => setScript(event.target.value)} />
             <div className="manualFooter">
-              <span>{photos.length} photo{photos.length === 1 ? "" : "s"} selected</span>
+              <div className="manualMeta">
+                <span>{photos.length} photo{photos.length === 1 ? "" : "s"} selected</span>
+                <span>{ttsAudioPath ? "Voice attached" : "No voice attached"}</span>
+              </div>
+              <div className="manualActions">
+                <select value={ttsLanguage} onChange={(event) => setTtsLanguage(event.target.value)}>
+                  <option value="ru-RU">Russian</option>
+                  <option value="en-US">English</option>
+                  <option value="fr-FR">French</option>
+                  <option value="de-DE">German</option>
+                  <option value="es-ES">Spanish</option>
+                  <option value="it-IT">Italian</option>
+                </select>
+                <button className="secondaryButton" disabled={ttsStatus === "loading" || ttsStatus === "running"} onClick={generateTts}>
+                  <FileAudio size={18} />
+                  {ttsStatus === "loading" || ttsStatus === "running" ? "Voice" : "Puter voice"}
+                </button>
+              </div>
               <button className="primaryButton" disabled={!canRunManual} onClick={renderManual}>
                 <FileVideo size={18} />
                 {manualStatus === "running" ? "Rendering" : "Render video"}
@@ -202,6 +245,45 @@ function formatDate(value?: string) {
     dateStyle: "medium",
     timeStyle: "short"
   }).format(new Date(value));
+}
+
+function ensurePuter(): Promise<void> {
+  if (window.puter?.ai?.txt2speech) return Promise.resolve();
+  return new Promise((resolve, reject) => {
+    const existing = document.querySelector<HTMLScriptElement>('script[data-puter="true"]');
+    if (existing) {
+      existing.addEventListener("load", () => resolve(), { once: true });
+      existing.addEventListener("error", () => reject(new Error("Failed to load Puter.js")), { once: true });
+      return;
+    }
+    const script = document.createElement("script");
+    script.src = "https://js.puter.com/v2/";
+    script.async = true;
+    script.dataset.puter = "true";
+    script.onload = () => resolve();
+    script.onerror = () => reject(new Error("Failed to load Puter.js"));
+    document.body.appendChild(script);
+  });
+}
+
+function blobToBase64(blob: Blob): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const result = String(reader.result ?? "");
+      resolve(result.includes(",") ? result.split(",")[1] : result);
+    };
+    reader.onerror = () => reject(reader.error ?? new Error("Could not read audio blob."));
+    reader.readAsDataURL(blob);
+  });
+}
+
+function extensionFromMime(mime: string): string {
+  if (mime.includes("wav")) return "wav";
+  if (mime.includes("ogg")) return "ogg";
+  if (mime.includes("aac")) return "aac";
+  if (mime.includes("flac")) return "flac";
+  return "mp3";
 }
 
 createRoot(document.getElementById("root")!).render(<App />);

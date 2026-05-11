@@ -14,6 +14,7 @@ export interface RenderOptions {
   idPrefix: string;
   durationSeconds: number;
   photos?: string[];
+  audioPath?: string;
 }
 
 export async function renderVerticalVideo(script: VideoScript, options: RenderOptions): Promise<RenderResult> {
@@ -35,18 +36,27 @@ export async function renderVerticalVideo(script: VideoScript, options: RenderOp
   );
 
   const videoPath = path.join(paths.outputs, `${options.idPrefix}-${stamp}.mp4`);
-  await runFfmpeg(ffmpegPath, [
+  const ffmpegArgs = [
     "-y",
     "-f",
     "concat",
     "-safe",
     "0",
     "-i",
-    concatPath,
-    "-f",
-    "lavfi",
-    "-i",
-    `anullsrc=channel_layout=stereo:sample_rate=44100`,
+    concatPath
+  ];
+
+  if (options.audioPath) {
+    ffmpegArgs.push("-i", options.audioPath);
+  } else {
+    ffmpegArgs.push("-f", "lavfi", "-i", "anullsrc=channel_layout=stereo:sample_rate=44100");
+  }
+
+  ffmpegArgs.push(
+    "-map",
+    "0:v:0",
+    "-map",
+    "1:a:0",
     "-shortest",
     "-vf",
     "format=yuv420p",
@@ -61,7 +71,9 @@ export async function renderVerticalVideo(script: VideoScript, options: RenderOp
     "-movflags",
     "+faststart",
     videoPath
-  ]);
+  );
+
+  await runFfmpeg(ffmpegPath, ffmpegArgs);
 
   const scriptPath = path.join(renderDir, "script.json");
   const sourcePath = path.join(renderDir, "sources.json");

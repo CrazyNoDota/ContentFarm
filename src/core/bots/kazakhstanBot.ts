@@ -32,12 +32,13 @@ export async function runKazakhstanThreadsBot(): Promise<BotRunResult> {
   return runRecord;
 }
 
-export async function renderManualVideo(scriptText: string, photos: string[]): Promise<RenderResult> {
+export async function renderManualVideo(scriptText: string, photos: string[], audioPath?: string): Promise<RenderResult> {
   await ensureWorkspace();
   const script = generateManualScript(scriptText, photos);
   return renderVerticalVideo(script, {
     idPrefix: "manual",
     durationSeconds: 30,
-    photos
+    photos,
+    audioPath
   });
 }

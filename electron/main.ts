@@ -1,7 +1,9 @@
 import { app, BrowserWindow, dialog, ipcMain, shell } from "electron";
+import { writeFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { config as loadEnv } from "dotenv";
+import { ensureWorkspace, paths } from "../src/core/paths.js";
 import { renderManualVideo } from "../src/core/bots/kazakhstanBot.js";
 import { DailyBotScheduler } from "../src/core/scheduler.js";
 
@@ -61,12 +63,25 @@ function registerIpc(): void {
     });
     return result.canceled ? [] : result.filePaths;
   });
-  ipcMain.handle("manual:render", async (_event, payload: { script: string; photos: string[] }) => {
+  ipcMain.handle("manual:render", async (_event, payload: { script: string; photos: string[]; audioPath?: string }) => {
     if (!payload.script?.trim()) throw new Error("Script is required.");
-    return renderManualVideo(payload.script, payload.photos ?? []);
+    return renderManualVideo(payload.script, payload.photos ?? [], payload.audioPath);
+  });
+  ipcMain.handle("tts:saveAudio", async (_event, payload: { base64: string; extension: string }) => {
+    await ensureWorkspace();
+    const extension = sanitizeExtension(payload.extension);
+    const stamp = new Date().toISOString().replace(/[:.]/g, "-");
+    const filePath = path.join(paths.outputs, `puter-tts-${stamp}.${extension}`);
+    await writeFile(filePath, Buffer.from(payload.base64, "base64"));
+    return filePath;
   });
   ipcMain.handle("shell:showItem", async (_event, filePath: string) => {
     shell.showItemInFolder(filePath);
     return true;
   });
+}
+
+function sanitizeExtension(value: string): string {
+  const clean = value.toLowerCase().replace(/[^a-z0-9]/g, "");
+  return clean || "mp3";
 }

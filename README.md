@@ -18,6 +18,9 @@ The first implemented bot is `kazakhstan-threads`: once per 24 hours it can coll
 - Script engine:
   - Optional OpenAI-compatible LLM endpoint.
   - Deterministic Russian fallback template when no LLM key is configured.
+- Desktop TTS:
+  - Puter.js voice preview and audio saving in the manual video flow.
+  - Saved voice audio is muxed into the rendered MP4.
 - FFmpeg-based vertical video draft rendering.
 
 ## Current platform decision
@@ -95,10 +98,12 @@ REPLICATE_IMAGE_QUALITY=80
 REPLICATE_SAFETY_TOLERANCE=2
 ```
 
+Puter.js TTS is loaded in the desktop renderer from `https://js.puter.com/v2/`. In the manual video panel, choose a language, click `Puter voice`, then render the video. The saved audio is stored in `outputs/` and attached to the MP4.
+
 ## MVP roadmap
 
 1. Add verified Threads provider integration and normalize its exact response schema.
-2. Add TTS provider and audio waveform/subtitle timing.
+2. Add server-side TTS provider for VPS automation plus subtitle timing.
 3. Add TikTok/Instagram/YouTube upload adapters through official publishing APIs or approved schedulers.
 4. Add a queue database for VPS deployment.
 5. Add persona management UI for more niche bots.
