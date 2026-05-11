@@ -1,0 +1,22 @@
+{
+  "id": "kazakhstan-threads",
+  "name": "Kazakhstan Threads Daily",
+  "locale": "ru-KZ",
+  "timezone": "Asia/Almaty",
+  "schedule": {
+    "hour": 9,
+    "minute": 0
+  },
+  "platforms": ["threads", "x"],
+  "keywords": ["Казахстан", "Алматы", "Астана", "тенге", "Казахстан Threads", "Qazaqstan"],
+  "output": {
+    "aspectRatio": "9:16",
+    "durationSeconds": 30,
+    "voice": "ru-KZ-neutral"
+  },
+  "style": {
+    "tone": "fast, local, direct, Russian-language, Kazakhstan context",
+    "visualStyle": "high-energy vertical news edit, kinetic Russian captions, Kazakhstan city visuals, social media screenshots",
+    "captionStyle": "large bold Russian text with short lines and strong contrast"
+  }
+}

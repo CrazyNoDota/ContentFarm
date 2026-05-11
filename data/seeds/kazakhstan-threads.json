@@ -1,0 +1,38 @@
+[
+  {
+    "id": "seed-threads-1",
+    "platform": "threads",
+    "author": "almaty_daily",
+    "text": "В Threads спорят о новых ценах в Алматы: аренда, кофе и такси снова стали главным раздражителем недели.",
+    "url": "https://www.threads.net/",
+    "createdAt": "2026-05-11T08:00:00.000Z",
+    "metrics": { "likes": 510, "replies": 92, "reposts": 44, "quotes": 18, "views": 18000 }
+  },
+  {
+    "id": "seed-threads-2",
+    "platform": "threads",
+    "author": "astana_watch",
+    "text": "Астана обсуждает резкую смену погоды и пробки: пользователи сравнивают утренний город с большим стресс-тестом.",
+    "url": "https://www.threads.net/",
+    "createdAt": "2026-05-11T07:20:00.000Z",
+    "metrics": { "likes": 300, "replies": 66, "reposts": 21, "quotes": 11, "views": 9200 }
+  },
+  {
+    "id": "seed-x-1",
+    "platform": "x",
+    "author": "tenge_pulse",
+    "text": "Тенге опять обсуждают как индикатор настроения: люди спорят, что сильнее влияет на цены в Казахстане прямо сейчас.",
+    "url": "https://x.com/",
+    "createdAt": "2026-05-11T06:40:00.000Z",
+    "metrics": { "likes": 240, "replies": 38, "reposts": 30, "quotes": 9, "views": 11000 }
+  },
+  {
+    "id": "seed-threads-3",
+    "platform": "threads",
+    "author": "kz_culture",
+    "text": "Казахстанские пользователи спорят, почему локальные мемы быстрее попадают в TikTok, чем нормальные объяснения новостей.",
+    "url": "https://www.threads.net/",
+    "createdAt": "2026-05-11T05:15:00.000Z",
+    "metrics": { "likes": 185, "replies": 48, "reposts": 29, "quotes": 7, "views": 8700 }
+  }
+]
