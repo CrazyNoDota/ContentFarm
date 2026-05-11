@@ -3,6 +3,7 @@ import { copyFile, mkdir, writeFile } from "node:fs/promises";
 import { createRequire } from "node:module";
 import path from "node:path";
 import sharp from "sharp";
+import { generateReplicateImage } from "../images/replicateImage.js";
 import { paths } from "../paths.js";
 import type { RenderResult, VideoScript } from "../types.js";
 
@@ -89,11 +90,18 @@ async function createFrames(
     const beat = beats[index];
     const output = path.join(renderDir, `frame-${String(index).padStart(2, "0")}.png`);
     const photo = photos[index % Math.max(photos.length, 1)];
+    let visualAsset = photos.length > 0 ? photo : undefined;
     if (photo) {
       const copied = path.join(renderDir, `photo-${String(index).padStart(2, "0")}${path.extname(photo)}`);
       await copyFile(photo, copied).catch(() => undefined);
     }
-    await renderFrame(output, beat.text, script.title, index, photos.length > 0 ? photo : undefined);
+    if (!visualAsset && beat.visualPrompt) {
+      visualAsset = await generateReplicateImage(beat.visualPrompt, renderDir, index).catch((error) => {
+        console.warn(`Replicate image generation failed for beat ${index}:`, error);
+        return undefined;
+      });
+    }
+    await renderFrame(output, beat.text, script.title, index, visualAsset);
     frames.push({ file: output, duration: frameDuration });
   }
 

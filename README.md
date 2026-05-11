@@ -82,6 +82,19 @@ LLM_RESPONSE_FORMAT=off
 LLM_EXTRA_BODY={"chat_template_kwargs":{"thinking":false}}
 ```
 
+For Replicate / FLUX image generation, keep it disabled until you want each render to spend image credits:
+
+```env
+REPLICATE_API_TOKEN=your_rotated_token
+REPLICATE_IMAGE_ENABLED=true
+REPLICATE_IMAGE_MODEL=black-forest-labs/flux-2-pro
+REPLICATE_IMAGE_RESOLUTION=1 MP
+REPLICATE_IMAGE_ASPECT_RATIO=9:16
+REPLICATE_IMAGE_FORMAT=webp
+REPLICATE_IMAGE_QUALITY=80
+REPLICATE_SAFETY_TOLERANCE=2
+```
+
 ## MVP roadmap
 
 1. Add verified Threads provider integration and normalize its exact response schema.
