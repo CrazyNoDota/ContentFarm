@@ -36,37 +36,47 @@ export function generateManualScript(script: string, photos: string[]): VideoScr
 
 async function tryGenerateWithLlm(persona: Persona, trends: TrendItem[]): Promise<VideoScript | null> {
   const baseUrl = process.env.LLM_BASE_URL ?? "https://api.openrouter.ai/v1";
+  const requestBody: Record<string, unknown> = {
+    model: process.env.LLM_MODEL,
+    temperature: readNumberEnv("LLM_TEMPERATURE", 1),
+    top_p: readNumberEnv("LLM_TOP_P", 0.95),
+    max_tokens: readNumberEnv("LLM_MAX_TOKENS", 4096),
+    messages: [
+      {
+        role: "system",
+        content:
+          "You write Russian-language Kazakhstan short-form news scripts. Return valid JSON only with title, caption, hashtags, narration, beats. Beats must have at, text, visualPrompt."
+      },
+      {
+        role: "user",
+        content: JSON.stringify({
+          persona,
+          trends: trends.slice(0, 8),
+          requiredShape: {
+            title: "string",
+            caption: "string",
+            hashtags: ["string"],
+            narration: "string",
+            beats: [{ at: 0, text: "string", visualPrompt: "string" }]
+          }
+        })
+      }
+    ]
+  };
+
+  if (process.env.LLM_RESPONSE_FORMAT !== "off") {
+    requestBody.response_format = { type: "json_object" };
+  }
+
+  Object.assign(requestBody, readJsonEnv("LLM_EXTRA_BODY"));
+
   const response = await fetch(`${baseUrl.replace(/\/$/, "")}/chat/completions`, {
     method: "POST",
     headers: {
       Authorization: `Bearer ${process.env.LLM_API_KEY}`,
       "Content-Type": "application/json"
     },
-    body: JSON.stringify({
-      model: process.env.LLM_MODEL,
-      response_format: { type: "json_object" },
-      messages: [
-        {
-          role: "system",
-          content:
-            "You write Russian-language Kazakhstan short-form news scripts. Return valid JSON only with title, caption, hashtags, narration, beats. Beats must have at, text, visualPrompt."
-        },
-        {
-          role: "user",
-          content: JSON.stringify({
-            persona,
-            trends: trends.slice(0, 8),
-            requiredShape: {
-              title: "string",
-              caption: "string",
-              hashtags: ["string"],
-              narration: "string",
-              beats: [{ at: 0, text: "string", visualPrompt: "string" }]
-            }
-          })
-        }
-      ]
-    })
+    body: JSON.stringify(requestBody)
   });
 
   if (!response.ok) {
@@ -79,7 +89,7 @@ async function tryGenerateWithLlm(persona: Persona, trends: TrendItem[]): Promis
   if (!content) return null;
 
   try {
-    const parsed = JSON.parse(content) as Omit<VideoScript, "sources">;
+    const parsed = JSON.parse(extractJson(content)) as Omit<VideoScript, "sources">;
     return {
       ...parsed,
       sources: trends
@@ -87,6 +97,35 @@ async function tryGenerateWithLlm(persona: Persona, trends: TrendItem[]): Promis
   } catch {
     return null;
   }
+}
+
+function readNumberEnv(name: string, fallback: number): number {
+  const value = process.env[name];
+  if (!value) return fallback;
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : fallback;
+}
+
+function readJsonEnv(name: string): Record<string, unknown> {
+  const value = process.env[name];
+  if (!value) return {};
+  try {
+    const parsed = JSON.parse(value);
+    return parsed && typeof parsed === "object" && !Array.isArray(parsed) ? (parsed as Record<string, unknown>) : {};
+  } catch {
+    console.warn(`${name} is not valid JSON; ignoring it.`);
+    return {};
+  }
+}
+
+function extractJson(content: string): string {
+  const trimmed = content.trim();
+  const fenced = trimmed.match(/```(?:json)?\s*([\s\S]*?)```/i);
+  if (fenced?.[1]) return fenced[1].trim();
+  const start = trimmed.indexOf("{");
+  const end = trimmed.lastIndexOf("}");
+  if (start >= 0 && end > start) return trimmed.slice(start, end + 1);
+  return trimmed;
 }
 
 function generateTemplateScript(persona: Persona, trends: TrendItem[]): VideoScript {

@@ -69,6 +69,19 @@ LLM_MODEL=...
 
 The Threads provider endpoint should accept `query` and `limit` query parameters. It can return an array, or an object with `items`, `data`, or `results`.
 
+For NVIDIA NIM / DeepSeek, use the OpenAI-compatible settings without committing the key:
+
+```env
+LLM_BASE_URL=https://integrate.api.nvidia.com/v1
+LLM_API_KEY=your_rotated_key
+LLM_MODEL=deepseek-ai/deepseek-v4-pro
+LLM_TEMPERATURE=1
+LLM_TOP_P=0.95
+LLM_MAX_TOKENS=16384
+LLM_RESPONSE_FORMAT=off
+LLM_EXTRA_BODY={"chat_template_kwargs":{"thinking":false}}
+```
+
 ## MVP roadmap
 
 1. Add verified Threads provider integration and normalize its exact response schema.
